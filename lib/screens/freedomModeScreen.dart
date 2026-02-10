@@ -34,7 +34,6 @@ class _FreedomModeScreenState extends State<FreedomModeScreen> {
       final camera = cameras.firstWhere((cam) => cam.lensDirection == CameraLensDirection.front);
       _cameraController = CameraController(camera, ResolutionPreset.medium, enableAudio: false);
       await _cameraController!.initialize();
-
       await _handLandmarkerService.initialize();
       await _signClassifierService.initialize();
       _cameraController!.startImageStream(_processFrame);
@@ -48,7 +47,6 @@ class _FreedomModeScreenState extends State<FreedomModeScreen> {
       final bytes = _convertYUV420toImageBytes(image);
       final landmarks = await _handLandmarkerService.processFrame(bytes, image.width, image.height);
       if (landmarks != null && landmarks.length == 63) {
-
         final transformedLandmarks = List<double>.filled(63, 0);
         for (int i = 0; i < 21; i++) {
           transformedLandmarks[i * 3] = landmarks[i * 3 + 1];
@@ -57,7 +55,6 @@ class _FreedomModeScreenState extends State<FreedomModeScreen> {
         }
         final result = await _signClassifierService.predict(transformedLandmarks);
         if (result != null && mounted) {
-
           setState(() {
             _currentLandmarks = landmarks;
             _predictedSign = result.$1;
@@ -114,67 +111,166 @@ class _FreedomModeScreenState extends State<FreedomModeScreen> {
   }
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final scaffoldColor = isDark ? const Color(0xFF121212) : Colors.white;
+    final cardColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final borderColor = isDark ? Colors.grey[800]! : Colors.grey[300]!;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subTextColor = isDark ? Colors.grey[400] : Colors.grey[600];
+    final highlightColor = theme.primaryColor;
+    final screenHeight = MediaQuery.of(context).size.height;
     return Scaffold(
-      appBar: AppBar(title: const Text('Freedom Mode')),
+      backgroundColor: scaffoldColor,
+      appBar: AppBar(
+        title: Text('Freedom Mode', style: TextStyle(color: textColor, fontWeight: FontWeight.bold)),
+        backgroundColor: scaffoldColor,
+        elevation: 0,
+        iconTheme: IconThemeData(color: textColor),
+      ),
       body: Stack(
         children: [
           !_isInitialized
-            ? const Center(child: CircularProgressIndicator())
-            : Column(
-                children: [
-                  Expanded(
-                    child: Stack(
-                      children: [
-                        CameraPreviewWidget(
-                          controller: _cameraController!,
-                          overlay: _currentLandmarks != null
-                              ? CustomPaint(
-                                  painter: HandPainter(landmarks: _currentLandmarks, imageSize: _cameraController!.value.previewSize!),
-                                )
-                              : null,
+              ? Center(child: CircularProgressIndicator(color: highlightColor))
+              : Column(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        margin: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.black,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: borderColor),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
-                        Positioned(
-                          top: 16,
-                          left: 16,
-                          child: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.black54,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              _currentLandmarks != null 
-                                  ? 'Hand Detected ✓\n${(_confidence * 100).toStringAsFixed(0)}% Confident'
-                                  : 'No Hand Detected',
-                              style: const TextStyle(color: Colors.white, fontSize: 12),
-                            ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(15),
+                          child: Stack(
+                            children: [
+                              CameraPreviewWidget(
+                                controller: _cameraController!,
+                                overlay: _currentLandmarks != null
+                                  ? CustomPaint(
+                                      painter: HandPainter(landmarks: _currentLandmarks, imageSize: _cameraController!.value.previewSize!),
+                                    )
+                                  : null,
+                              ),
+                              Positioned(
+                                top: 16,
+                                left: 16,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.6),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        _currentLandmarks != null ? Icons.check_circle : Icons.warning_amber_rounded,
+                                        size: 14,
+                                        color: _currentLandmarks != null ? Colors.greenAccent : Colors.amberAccent,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        _currentLandmarks != null ? 'Hand Detected' : 'No Hand Detected',
+                                        style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ],
+                      ),
                     ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    color: Theme.of(context).colorScheme.surface,
-                    child: Column(
-                      children: [
-                        if (_currentLandmarks != null) ...[
-                          Text(_predictedSign, style: const TextStyle(fontSize: 72, fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 8),
-                          Text('${(_confidence * 100).toStringAsFixed(1)}% Confident', style: TextStyle(fontSize: 18, color: _confidence > 0.7 ? Colors.green : Colors.orange)),
-                        ] else
-                          const Text('Show Your Hand To The Camera', style: TextStyle(fontSize: 18)),
-                      ],
+                    Container(
+                      height: screenHeight * 0.35,
+                      width: double.infinity,
+                      padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+                      decoration: BoxDecoration(
+                        color: cardColor,
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 16,
+                            offset: const Offset(0, -4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          if (_currentLandmarks != null) ...[
+                            Text('Predicted Sign'.toUpperCase(), style: TextStyle(fontSize: 14, color: subTextColor, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+                            const SizedBox(height: 8),
+                            Text(
+                              _predictedSign,
+                              style: TextStyle(
+                                fontSize: 96,
+                                fontWeight: FontWeight.w900,
+                                color: highlightColor,
+                                height: 1.0,
+                                shadows: [
+                                  Shadow(
+                                    color: highlightColor.withValues(alpha: 0.3),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 4),
+                                  )
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: (_confidence > 0.7 ? Colors.green : Colors.orange).withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                '${(_confidence * 100).toStringAsFixed(1)}% Confidence',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: _confidence > 0.7 ? Colors.green : Colors.orange,
+                                ),
+                              ),
+                            ),
+                          ] else ...[
+                            Icon(Icons.back_hand_rounded, size: 64, color: subTextColor?.withValues(alpha: 0.3)),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Show Your Hand',
+                              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: textColor),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Position Your Hand In Front Of The Camera To Start Detecting Signs!',
+                              style: TextStyle(fontSize: 14, color: subTextColor, height: 1.5),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
           if (_showTutorial)
             TutorialOverlay(
               modeKey: 'freedom',
               title: 'Freedom Mode',
               description: 'Explore Sign Language Freely! Make Any Hand Sign & See It Recognized Instantly!',
-              icon: Icons.explore,
+              icon: Icons.explore_outlined,
               steps: [
                 'Hold Your Hand In Front Of The Camera',
                 'Make Any ASL Letter Sign',

@@ -31,6 +31,7 @@ class _PracticeModeScreenState extends State<PracticeModeScreen> {
   int _correctCount = 0;
   bool _showSuccess = false;
   bool _showTutorial = false;
+  bool _answered = false;
   @override
   void initState() {
     super.initState();
@@ -51,7 +52,7 @@ class _PracticeModeScreenState extends State<PracticeModeScreen> {
     } catch (e) {}
   }
   Future<void> _processFrame(CameraImage image) async {
-    if (_isProcessing) return;
+    if (_isProcessing || _answered) return;
     _isProcessing = true;
     try {
       final bytes = _convertYUV420toImageBytes(image);
@@ -77,6 +78,7 @@ class _PracticeModeScreenState extends State<PracticeModeScreen> {
     _isProcessing = false;
   }
   void _onCorrectSign() async {
+    setState(() => _answered = true);
     _soundService.playCorrect();
     setState(() {
       _feedback = 'Correct! ✓';
@@ -85,12 +87,14 @@ class _PracticeModeScreenState extends State<PracticeModeScreen> {
       _showSuccess = true;
     });
     await _cacheService.addLearnedSign(_letters[_currentIndex]);
-    await Future.delayed(const Duration(seconds: 1));
+    await Future.delayed(const Duration(milliseconds: 500)); 
+    await Future.delayed(const Duration(seconds: 1)); 
     if (_currentIndex < _letters.length - 1) {
       setState(() {
         _currentIndex++;
         _feedback = '';
         _showSuccess = false;
+        _answered = false;
       });
     } else {
       setState(() => _showSuccess = false);
@@ -99,13 +103,22 @@ class _PracticeModeScreenState extends State<PracticeModeScreen> {
     }
   }
   void _showCompletionDialog() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final textColor = isDark ? Colors.white : Colors.black87;
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        title: const Text('Practice Complete!'),
-        content: Text('You Completed All 26 Letters!\nCorrect: $_correctCount/26'),
+        backgroundColor: cardColor,
+        title: Text('Practice Complete!', style: TextStyle(color: textColor, fontWeight: FontWeight.bold)),
+        content: Text('You Completed All 26 Letters!\nCorrect: $_correctCount/26', style: TextStyle(color: isDark ? Colors.grey[300] : Colors.grey[800])),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Done')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Done', style: TextStyle(color: theme.primaryColor)),
+          ),
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
@@ -113,9 +126,10 @@ class _PracticeModeScreenState extends State<PracticeModeScreen> {
                 _currentIndex = 0;
                 _correctCount = 0;
                 _feedback = '';
+                _answered = false;
               });
             },
-            child: const Text('Restart'),
+            child: Text('Restart', style: TextStyle(color: theme.primaryColor, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -158,61 +172,186 @@ class _PracticeModeScreenState extends State<PracticeModeScreen> {
   }
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final scaffoldColor = isDark ? const Color(0xFF121212) : Colors.white;
+    final cardColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final borderColor = isDark ? Colors.grey[800]! : Colors.grey[300]!;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subTextColor = isDark ? Colors.grey[400] : Colors.grey[600];
+    final highlightColor = theme.primaryColor;
+    final screenHeight = MediaQuery.of(context).size.height;
     return Scaffold(
-      appBar: AppBar(title: Text('Practice Mode - ${_currentIndex + 1}/26')),
+      backgroundColor: scaffoldColor,
+      appBar: AppBar(
+        title: Text('Practice Mode', style: TextStyle(color: textColor, fontWeight: FontWeight.bold)),
+        backgroundColor: scaffoldColor,
+        elevation: 0,
+        iconTheme: IconThemeData(color: textColor),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: Center(
+              child: Text(
+                '${_currentIndex + 1}/26',
+                style: TextStyle(color: subTextColor, fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ),
+        ],
+      ),
       body: Stack(
         children: [
           !_isInitialized
-            ? const Center(child: CircularProgressIndicator())
-            : Column(
-                children: [
-                  Expanded(
-                    child: CameraPreviewWidget(
-                      controller: _cameraController!,
-                      overlay: _currentLandmarks != null
-                          ? CustomPaint(painter: HandPainter(landmarks: _currentLandmarks, imageSize: _cameraController!.value.previewSize!))
-                          : null,
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    color: Theme.of(context).colorScheme.surface,
-                    child: Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Text('Show This Sign:', style: TextStyle(fontSize: 18)),
-                            const SizedBox(width: 12),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Image.asset(
-                                'assets/images/signs/${_letters[_currentIndex].toLowerCase()}.png',
-                                width: 50,
-                                height: 50,
-                                fit: BoxFit.contain,
-                                errorBuilder: (ctx, e, s) => const SizedBox(),
-                              ),
+              ? Center(child: CircularProgressIndicator(color: highlightColor))
+              : Column(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        margin: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.black,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: borderColor),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 16),
-                        Text(_letters[_currentIndex], style: const TextStyle(fontSize: 96, fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 16),
-                        if (_feedback.isNotEmpty) Text(_feedback, style: TextStyle(fontSize: 24, color: _feedbackColor, fontWeight: FontWeight.bold)),
-                      ],
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(15),
+                          child: Stack(
+                            children: [
+                              CameraPreviewWidget(
+                                controller: _cameraController!,
+                                overlay: _currentLandmarks != null
+                                  ? CustomPaint(
+                                      painter: HandPainter(landmarks: _currentLandmarks, imageSize: _cameraController!.value.previewSize!),
+                                    )
+                                  : null,
+                              ),
+                              Positioned(
+                                top: 16,
+                                left: 16,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.6),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        _currentLandmarks != null ? Icons.check_circle : Icons.warning_amber_rounded,
+                                        size: 14,
+                                        color: _currentLandmarks != null ? Colors.greenAccent : Colors.amberAccent,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        _currentLandmarks != null ? 'Hand Detected' : 'No Hand Detected',
+                                        style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                ],
-              ),
-          if (_showSuccess)
-            SuccessAnimation(onComplete: () {}),
+                    Container(
+                      height: screenHeight * 0.35,
+                      width: double.infinity,
+                      padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+                      decoration: BoxDecoration(
+                        color: cardColor,
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 16,
+                            offset: const Offset(0, -4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text('Show This Sign', style: TextStyle(fontSize: 16, color: subTextColor, fontWeight: FontWeight.bold)),
+                              const SizedBox(width: 12),
+                              Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: isDark ? Colors.grey[800] : Colors.grey[100],
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: borderColor),
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(4),
+                                  child: Image.asset(
+                                    'assets/images/signs/${_letters[_currentIndex].toLowerCase()}.png',
+                                    width: 40,
+                                    height: 40,
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (ctx, e, s) => Icon(Icons.broken_image, size: 40, color: subTextColor),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            _letters[_currentIndex],
+                            style: TextStyle(
+                              fontSize: 96,
+                              fontWeight: FontWeight.w900,
+                              color: highlightColor,
+                              height: 1.0,
+                              shadows: [
+                                Shadow(
+                                  color: highlightColor.withOpacity(0.3),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                )
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          if (_feedback.isNotEmpty)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.green.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                _feedback,
+                                style: const TextStyle(fontSize: 18, color: Colors.green, fontWeight: FontWeight.bold),
+                              ),
+                            )
+                          else
+                            const SizedBox(height: 44),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+          if (_showSuccess) SuccessAnimation(onComplete: () {}),
           if (_showTutorial)
             TutorialOverlay(
               modeKey: 'practice',
               title: 'Practice Mode',
               description: 'Learn Each Letter Step By Step From A To Z!',
-              icon: Icons.fitness_center,
+              icon: Icons.fitness_center_outlined,
               steps: [
                 'A Letter Will Be Displayed Below The Camera',
                 'Make The Corresponding ASL Hand Sign',

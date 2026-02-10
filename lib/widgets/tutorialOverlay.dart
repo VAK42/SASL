@@ -29,61 +29,44 @@ class TutorialOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.black.withValues(alpha: 0.85),
+      color: Colors.black.withValues(alpha: 0.9),
       child: SafeArea(
         child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor.withValues(alpha: 0.2),
+                    color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
+                    border: Border.all(color: Theme.of(context).primaryColor.withValues(alpha: 0.5)),
                   ),
-                  child: Icon(icon, size: 64, color: Colors.white),
+                  child: Icon(icon, size: 64, color: Theme.of(context).primaryColor),
                 ),
-                const SizedBox(height: 24),
-                Text(
-                  title,
-                  style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
-                  textAlign: TextAlign.center,
-                ),
+                const SizedBox(height: 32),
+                Text(title, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: -0.5), textAlign: TextAlign.center),
                 const SizedBox(height: 12),
-                Text(
-                  description,
-                  style: TextStyle(fontSize: 16, color: Colors.white.withValues(alpha: 0.8)),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
+                Text(description, style: TextStyle(fontSize: 16, color: Colors.grey[300], height: 1.5), textAlign: TextAlign.center),
+                const SizedBox(height: 40),
                 ...steps.asMap().entries.map((entry) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.only(bottom: 20),
                   child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Container(
                         width: 28,
                         height: 28,
                         decoration: BoxDecoration(
                           color: Theme.of(context).primaryColor,
-                          shape: BoxShape.circle,
+                          borderRadius: BorderRadius.circular(6),
                         ),
-                        child: Center(
-                          child: Text(
-                            '${entry.key + 1}',
-                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
-                          ),
-                        ),
+                        child: Center(child: Text('${entry.key + 1}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14))),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          entry.value,
-                          style: TextStyle(fontSize: 15, color: Colors.white.withValues(alpha: 0.9)),
-                        ),
-                      ),
+                      const SizedBox(width: 16),
+                      Expanded(child: Text(entry.value, style: const TextStyle(fontSize: 16, color: Colors.white, height: 1.3))),
                     ],
                   ),
                 )),
@@ -96,10 +79,13 @@ class TutorialOverlay extends StatelessWidget {
                       onDismiss();
                     },
                     style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).primaryColor,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
-                    child: const Text('Got It!', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    child: const Text('Got It!', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],

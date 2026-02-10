@@ -103,21 +103,42 @@ class _TestModeScreenState extends State<TestModeScreen> {
     final percentage = (_score / _letters.length * 100).round();
     await _cacheService.updateBestScore(_score);
     if (mounted) {
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      final cardColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+      final textColor = isDark ? Colors.white : Colors.black87;
+      final subTextColor = isDark ? Colors.grey[400] : Colors.grey[600];
       showDialog(
         context: context,
         barrierDismissible: false,
         builder: (ctx) => AlertDialog(
-          title: const Text('Test Complete!'),
+          backgroundColor: cardColor,
+          title: Text('Test Complete!', style: TextStyle(color: textColor, fontWeight: FontWeight.bold)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Score: $_score/${_letters.length}', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-              Text('$percentage%', style: TextStyle(fontSize: 32, color: percentage >= 70 ? Colors.green : Colors.orange)),
+              Text('Score: $_score/${_letters.length}', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: textColor)),
+              const SizedBox(height: 16),
+              Text(
+                '$percentage%', 
+                style: TextStyle(
+                  fontSize: 48, 
+                  fontWeight: FontWeight.w900, 
+                  color: percentage >= 70 ? Colors.green : Colors.orange
+                )
+              ),
+              const SizedBox(height: 8),
+              Text(
+                percentage >= 90 ? 'Excellent!' : percentage >= 70 ? 'Great Job!' : 'Keep Practicing!',
+                style: TextStyle(color: subTextColor, fontSize: 16),
+              ),
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Done')),
             TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Done', style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600])),
+            ),
+            ElevatedButton(
               onPressed: () {
                 Navigator.pop(ctx);
                 setState(() {
@@ -127,6 +148,10 @@ class _TestModeScreenState extends State<TestModeScreen> {
                   _letters.shuffle();
                 });
               },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).primaryColor,
+                foregroundColor: Colors.white,
+              ),
               child: const Text('Retry'),
             ),
           ],
@@ -171,45 +196,177 @@ class _TestModeScreenState extends State<TestModeScreen> {
   }
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final scaffoldColor = isDark ? const Color(0xFF121212) : Colors.white;
+    final cardColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final borderColor = isDark ? Colors.grey[800]! : Colors.grey[300]!;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subTextColor = isDark ? Colors.grey[400] : Colors.grey[600];
+    final highlightColor = theme.primaryColor;
+    final screenHeight = MediaQuery.of(context).size.height;
     return Scaffold(
-      appBar: AppBar(title: Text('Test Mode - Score: $_score/${_currentIndex + 1}')),
+      backgroundColor: scaffoldColor,
+      appBar: AppBar(
+        title: Text('Test Mode', style: TextStyle(color: textColor, fontWeight: FontWeight.bold)),
+        backgroundColor: scaffoldColor,
+        elevation: 0,
+        iconTheme: IconThemeData(color: textColor),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: Center(
+              child: Text(
+                '${_currentIndex + 1}/26',
+                style: TextStyle(color: subTextColor, fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ),
+        ],
+      ),
       body: Stack(
         children: [
           !_isInitialized
-            ? const Center(child: CircularProgressIndicator())
-            : Column(
-                children: [
-                  Expanded(
-                    child: CameraPreviewWidget(
-                      controller: _cameraController!,
-                      overlay: _currentLandmarks != null
-                          ? CustomPaint(painter: HandPainter(landmarks: _currentLandmarks, imageSize: _cameraController!.value.previewSize!))
-                          : null,
+              ? Center(child: CircularProgressIndicator(color: highlightColor))
+              : Column(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        margin: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.black,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: borderColor),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(15),
+                          child: Stack(
+                            children: [
+                              CameraPreviewWidget(
+                                controller: _cameraController!,
+                                overlay: _currentLandmarks != null
+                                  ? CustomPaint(
+                                      painter: HandPainter(landmarks: _currentLandmarks, imageSize: _cameraController!.value.previewSize!),
+                                    )
+                                  : null,
+                              ),
+                              Positioned(
+                                top: 16,
+                                left: 16,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.6),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        _currentLandmarks != null ? Icons.check_circle : Icons.warning_amber_rounded,
+                                        size: 14,
+                                        color: _currentLandmarks != null ? Colors.greenAccent : Colors.amberAccent,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        _currentLandmarks != null ? 'Hand Detected' : 'No Hand Detected',
+                                        style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    color: Theme.of(context).colorScheme.surface,
-                    child: Column(
-                      children: [
-                        Text('Question ${_currentIndex + 1}/26', style: const TextStyle(fontSize: 18)),
-                        const SizedBox(height: 16),
-                        Text(_letters[_currentIndex], style: const TextStyle(fontSize: 96, fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 8),
-                        TextButton(onPressed: _answered ? null : () => _onAnswer(false), child: const Text('Skip')),
-                      ],
+                    Container(
+                      height: screenHeight * 0.35,
+                      width: double.infinity,
+                      padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+                      decoration: BoxDecoration(
+                        color: cardColor,
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 16,
+                            offset: const Offset(0, -4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              Column(
+                                children: [
+                                  Text('Score', style: TextStyle(fontSize: 12, color: subTextColor, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
+                                  const SizedBox(height: 4),
+                                  Text('$_score/${_currentIndex + 1}', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: textColor)),
+                                ],
+                              ),
+                              Container(
+                                width: 100,
+                                height: 100,
+                                decoration: BoxDecoration(
+                                  color: highlightColor.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: highlightColor.withValues(alpha: 0.3)),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    _letters[_currentIndex], 
+                                    style: TextStyle(fontSize: 48, fontWeight: FontWeight.w900, color: highlightColor)
+                                  ),
+                                ),
+                              ),
+                              Column(
+                                children: [
+                                  Text('Question', style: TextStyle(fontSize: 12, color: subTextColor, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
+                                  const SizedBox(height: 4),
+                                  Text('${_currentIndex + 1}/26', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: textColor)),
+                                ],
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 32),
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton(
+                              onPressed: _answered ? null : () => _onAnswer(false),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: subTextColor,
+                                side: BorderSide(color: borderColor),
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                              child: const Text('Skip Question', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
-          if (_showSuccess)
-            SuccessAnimation(onComplete: () {}),
+                  ],
+                ),
+          if (_showSuccess) SuccessAnimation(onComplete: () {}),
           if (_showTutorial)
             TutorialOverlay(
               modeKey: 'test',
               title: 'Test Mode',
               description: 'Test Your Knowledge! Letters Appear In Random Order!',
-              icon: Icons.quiz,
+              icon: Icons.quiz_outlined,
               steps: [
                 'A Random Letter Will Be Shown',
                 'Make The Correct ASL Hand Sign',
