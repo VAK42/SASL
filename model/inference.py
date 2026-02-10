@@ -145,7 +145,8 @@ def runDemo():
   if not modelPath.exists():
     print("Model Not Found! Please Train First!")
     print("1. python data/extractLandmarks.py")
-    print("2. python trainTflite.py")
+    print("2. python trainEnsemble.py")
+    print("3. python trainTflite.py")
     return
   predictor = SignPredictor(modelPath, scalerParamsPath, labelMapPath)
   cap = cv2.VideoCapture(0)
@@ -166,7 +167,7 @@ def runDemo():
         color = (0, 0, 255)
       cv2.putText(frame, f"{label}: {confidence:.0%}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1.5, color, 3)
       drawLandmarks(frame, handLandmarks)
-    cv2.imshow("ASL Sign Recognition - TFLite", frame)
+    cv2.imshow("ASL Sign Recognition", frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
       break
   cap.release()

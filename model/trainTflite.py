@@ -35,7 +35,7 @@ def createMlpModel(inputShape, numClasses):
     metrics=['accuracy']
   )
   return model
-def trainTfliteModel(dataPath, outputPath, epochs=50, batchSize=64):
+def trainTfliteModel(dataPath, outputPath, epochs=100, batchSize=64):
   features, labels, labelMap = loadData(dataPath)
   numClasses = len(labelMap)
   inputShape = features.shape[1]
