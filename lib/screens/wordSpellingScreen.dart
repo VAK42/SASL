@@ -365,13 +365,13 @@ class _WordSpellingScreenState extends State<WordSpellingScreen> {
                                   Container(
                                     padding: const EdgeInsets.all(4),
                                     decoration: BoxDecoration(
-                                      color: isDark ? Colors.black26 : Colors.white,
+                                      color: Colors.white,
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: ClipRRect(
                                       borderRadius: BorderRadius.circular(6),
                                       child: Image.asset(
-                                        'assets/images/signs/${_currentWord[_currentLetterIndex].toLowerCase()}.png',
+                                        'assets/images/signs/${_currentWord[_currentLetterIndex].toUpperCase()}.png',
                                         width: 32,
                                         height: 32,
                                         fit: BoxFit.contain,

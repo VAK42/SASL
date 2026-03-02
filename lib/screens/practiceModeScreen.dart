@@ -291,14 +291,14 @@ class _PracticeModeScreenState extends State<PracticeModeScreen> {
                               Container(
                                 padding: const EdgeInsets.all(4),
                                 decoration: BoxDecoration(
-                                  color: isDark ? Colors.grey[800] : Colors.grey[100],
+                                  color: Colors.white,
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(color: borderColor),
                                 ),
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(4),
                                   child: Image.asset(
-                                    'assets/images/signs/${_letters[_currentIndex].toLowerCase()}.png',
+                                    'assets/images/signs/${_letters[_currentIndex].toUpperCase()}.png',
                                     width: 40,
                                     height: 40,
                                     fit: BoxFit.contain,

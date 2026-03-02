@@ -123,12 +123,12 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.grey[900] : Colors.grey[50],
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: theme.dividerColor),
                 ),
                 child: Image.asset(
-                  'assets/images/signs/${letter.toLowerCase()}.png',
+                  'assets/images/signs/${letter.toUpperCase()}.png',
                   width: 150,
                   height: 150,
                   fit: BoxFit.contain,
