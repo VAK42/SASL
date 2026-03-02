@@ -36,11 +36,11 @@ class SignCard extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: colorScheme.secondaryContainer.withValues(alpha: 0.5),
+                      color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Image.asset(
-                      'assets/images/signs/${letter.toLowerCase()}.png',
+                      'assets/images/signs/${letter.toUpperCase()}.png',
                       fit: BoxFit.contain,
                       errorBuilder: (ctx, err, stack) => Center(
                         child: Icon(
